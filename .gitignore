@@ -1,0 +1,54 @@
+# Python-specific ignores
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+env/
+.virtualenv/
+*.venv/
+
+# Sensitive files (common in cybersecurity projects)
+*.key
+*.pem
+*.crt
+*.cert
+*.env
+.env.local
+secrets/
+keys/
+credentials.json
+config/secrets.yml
+
+# Logs and temporary files
+*.log
+*.log.*
+*.tmp
+temp/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Project-specific test data (avoid committing sensitive test files)
+test_data/
+sensitive_data/
+*.bak
+*.backup
+
+# Miscellaneous
+*.swp
+*.swo
+*.cache
