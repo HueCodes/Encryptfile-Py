@@ -3,7 +3,7 @@ import getpass
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
-from cryptography.exceptions import InvalidKey
+from cryptography.exceptions import InvalidTag
 import base64
 import argparse
 
@@ -60,7 +60,7 @@ class EncryptionTool:
             return aesgcm.decrypt(nonce, encrypted_key, None)
         except FileNotFoundError:
             raise FileNotFoundError(f"Key file '{self.key_file}' not found.")
-        except InvalidKey:
+        except InvalidTag:
             raise ValueError("Incorrect password or corrupted key file.")
         except Exception as e:
             raise ValueError(f"Failed to load key: {str(e)}")
@@ -92,7 +92,7 @@ class EncryptionTool:
                 f_out.write(decrypted_data)
         except FileNotFoundError:
             raise FileNotFoundError(f"Input file '{input_file}' not found.")
-        except InvalidKey:
+        except InvalidTag:
             raise ValueError("Incorrect key or corrupted file.")
         except Exception as e:
             raise ValueError(f"Decryption failed: {str(e)}")
@@ -102,19 +102,26 @@ def main():
     parser.add_argument("action", choices=["genkey", "encrypt", "decrypt"], help="Action to perform")
     parser.add_argument("--input", help="Input file path (for encrypt/decrypt)")
     parser.add_argument("--output", help="Output file path (for encrypt/decrypt)")
+    parser.add_argument("--keyfile", default="key.enc", help="Key file path (default: key.enc)")
+    parser.add_argument("--password", help="Password (insecure): provide password on the CLI (use only for scripts/tests)")
+    parser.add_argument("--password-env", help="Name of environment variable to read password from (optional)")
     args = parser.parse_args()
 
-    tool = EncryptionTool()
+    tool = EncryptionTool(key_file=args.keyfile)
     try:
         if args.action == "genkey":
-            password = getpass.getpass("Enter password to encrypt the key: ")
+            password = args.password or (os.environ.get(args.password_env) if args.password_env else None)
+            if not password:
+                password = getpass.getpass("Enter password to encrypt the key: ")
             key = tool.generate_key()
             tool.save_key(key, password)
             print(f"Key generated and saved to '{tool.key_file}'.")
         elif args.action in ["encrypt", "decrypt"]:
             if not args.input or not args.output:
                 raise ValueError("Both --input and --output are required for encrypt/decrypt.")
-            password = getpass.getpass("Enter password to load the key: ")
+            password = args.password or (os.environ.get(args.password_env) if args.password_env else None)
+            if not password:
+                password = getpass.getpass("Enter password to load the key: ")
             key = tool.load_key(password)
             if args.action == "encrypt":
                 tool.encrypt_file(args.input, args.output, key)
